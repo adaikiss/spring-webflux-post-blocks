@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link href="/webjars/bootstrap/4.0.0-beta.2/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <style type="text/css">
+        .waiting {
+            position: relative;
+            color: transparent !important;
+        }
+
+        .waiting:before {
+            color: white;
+            position: absolute;
+            content: '—';
+            display: block;
+            width: 100%;
+            left: 0;
+            text-align: center;
+            animation: waiting 0.5s linear infinite;
+        }
+
+        @keyframes waiting {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+    <title>Reproduce WebFlux Blocking</title>
+</head>
+<body>
+<div class="container">
+    <div class="row">
+        <div class="col-6">
+            <p>If you send a POST request with body length greater than 304, it might blocks, the server log shows that only 304 characters is received.</p>
+            <p>If you send a POST request with body length less than or equal to 304, it will success.</p>
+            <form>
+                <div class="form-group">
+                    <label for="timeout">AJAX Timeout</label>
+                    <input type="text" class="form-control" id="timeout" placeholder="AJAX timeout" value="2000">
+                </div>
+                <div class="form-group">
+                    <label for="text">Body</label>
+                    <textarea class="form-control" rows="12" id="text" placeholder="Script"></textarea>
+                </div>
+                <div>
+                    <button id="get" type="submit" class="btn btn-primary">GET</button>
+                    <button id="post" type="submit" class="btn btn-primary">POST</button>
+                    <button id="generate" type="button" class="btn btn-success">Generate 304 Characters</button>
+                </div>
+            </form>
+        </div>
+        <div class="col-6">
+            <pre id="result"></pre>
+        </div>
+    </div>
+</div>
+
+<script type="application/javascript" src="/webjars/jquery/3.2.1/jquery.min.js"></script>
+<script type="application/javascript">
+    $(function () {
+        $('#generate').click(function () {
+            const result = [];
+            for (let i = 0; i < 304; i++) {
+                result.push('0');
+            }
+            $('#text').val(result.join(''));
+        });
+        const getBtn = $('#get').click(function (event) {
+            event.preventDefault();
+            if (getBtn.is('.waiting')) {
+                return;
+            }
+            getBtn.addClass('waiting');
+            $.ajax({
+                url: '/hi',
+                type: 'get',
+                dataType: 'text',
+                success: function (result) {
+                    $('#result').prepend('Result:', result, '\n');
+                },
+                complete: function () {
+                    getBtn.removeClass('waiting');
+                }
+            });
+        });
+        const postBtn = $('#post').click(function (event) {
+            event.preventDefault();
+            if (postBtn.is('.waiting')) {
+                return;
+            }
+            const text = $('#text').val();
+            if (text.length === 0) {
+                alert('Text cannot be empty!');
+                return;
+            }
+            let timeout = $('#timeout').val();
+            if (isNaN(timeout)) {
+                timeout = 0;
+            } else {
+                timeout = parseInt(timeout);
+            }
+            postBtn.addClass('waiting');
+            $.ajax({
+                url: '/hi',
+                type: 'post',
+                data: text,
+                contentType: 'text/plain',
+                dataType: 'text',
+                timeout,
+                success: function (result) {
+                    $('#result').prepend('Result:', result, "\n");
+                },
+                error: function (jqXHR, textStatus) {
+                    alert(textStatus);
+                },
+                complete: function () {
+                    postBtn.removeClass('waiting');
+                }
+            });
+        });
+    });
+</script>
+</body>
+</html>
