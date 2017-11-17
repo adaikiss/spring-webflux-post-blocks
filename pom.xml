@@ -105,6 +105,12 @@
             <groupId>org.webjars</groupId>
             <artifactId>webjars-locator</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>io.projectreactor.ipc</groupId>
+            <artifactId>reactor-netty</artifactId>
+            <version>0.7.2.RELEASE</version>
+        </dependency>
     </dependencies>
 
     <build>
