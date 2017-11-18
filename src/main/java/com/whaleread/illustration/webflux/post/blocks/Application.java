@@ -32,11 +32,9 @@ public class Application implements WebFluxConfigurer {
     public RouterFunction<?> routers() {
         return route(path(""), request -> ServerResponse.ok().render("index"))
                 .andRoute(path("/favicon.ico"), request -> ServerResponse.notFound().build())
-                .andRoute(POST("/hi"), request -> {
-                    String body = request.bodyToMono(String.class).block();
-                    log.info("body: {}", body);
-                    return ServerResponse.ok().body(BodyInserters.fromObject("Data received, length: " + body.length()));
-                })
+                .andRoute(POST("/hi"), request -> request.bodyToMono(String.class)
+                        .doOnNext(body -> log.info("body: {}", body))
+                        .flatMap(body -> ServerResponse.ok().syncBody("Data received, length: " + body.length())))
                 .andRoute(GET("/hi"), request -> ServerResponse.ok().body(BodyInserters.fromObject("Hello " + request.queryParam("name").orElse("Anonymous") + "!")));
     }
 
